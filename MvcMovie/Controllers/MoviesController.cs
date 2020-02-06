@@ -12,16 +12,46 @@ namespace MvcMovie.Controllers
 {
     public class MoviesController : Controller
     {
-		private static List<Movie> Db = new List<Movie>();
+		private static List<Movie> Db = new List<Movie>
+		{
+			new Movie{ ID = 0, Title = "Ghostbusters", Genre = "Comédie", ReleaseDate = new DateTime(1984,06,08), Price = 6.99M},
+			new Movie{ ID = 1, Title = "Ghostbusters II", Genre = "Comédie", ReleaseDate = new DateTime(1989,06,16), Price = 6.99M},
+			new Movie{ ID = 2, Title = "Mondiale des singes", Genre = "Action", ReleaseDate = new DateTime(1986,03,27), Price = 5.99M}
+		};
 
 		// GET: Movies
-		public ActionResult Index()
-        {
-            return View(Db);
+		public ActionResult Index(string movieGenre, string searchString)
+		{
+			var GenreLst = new List<string>();
+
+			var GenreQry = from d in Db
+						   orderby d.Genre
+						   select d.Genre;
+
+			GenreLst.AddRange(GenreQry.Distinct());
+			ViewBag.movieGenre = new SelectList(GenreLst);
+
+			var movies = from m in Db
+						 select m;
+
+			if (searchString!=null)
+			{
+				searchString = searchString.ToLower();
+				movies = Db.Where(m => m.Title.ToLower().Contains(searchString));
+			}
+			if (!string.IsNullOrEmpty(movieGenre))
+			{
+				movies = movies.Where(m => m.Genre == movieGenre);
+			}
+			else
+			{
+				movies = Db;
+			}
+			return View(movies);
         }
 
-        // GET: Movies/Details/5
-        public ActionResult Details(int? id)
+		// GET: Movies/Details/5
+		public ActionResult Details(int? id)
         {
             if (id == null)
             {
@@ -81,8 +111,11 @@ namespace MvcMovie.Controllers
         {
             if (ModelState.IsValid)
             {
-                //db.Entry(movie).State = EntityState.Modified;
-                //db.SaveChanges();
+				//db.Entry(movie).State = EntityState.Modified;
+				//db.SaveChanges();
+				Movie mo = Db.Where(m => m.ID == movie.ID).Select(m => m).ToList()[0];
+				int index = Db.IndexOf(mo);
+				Db[index] = movie;
                 return RedirectToAction("Index");
             }
             return View(movie);
